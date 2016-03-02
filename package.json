@@ -1,0 +1,18 @@
+{
+  "name": "indexed-polygon",
+  "version": "0.1.0",
+  "description": "Faster point-in-polygon through indexing. Inpired by uber/in-n-out.",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --recursive --bail"
+  },
+  "author": "alexjab <alexandre.jablon@gmail.com> (http://jablon.me/)",
+  "license": "MIT",
+  "devDependencies": {
+    "mocha": "^2.4.5",
+    "should": "^8.2.2"
+  },
+  "dependencies": {
+    "point-in-polygon": "^1.0.0"
+  }
+}
