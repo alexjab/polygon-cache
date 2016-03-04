@@ -111,14 +111,32 @@ module.exports = class IndexedPolygon {
             }
           }
         });
-        if (!pointsInside) {
-          // If no point is inside the polygon, then the tile
-          // is completely outside of it.
-          cache[i + '-' + j] = 'o';
-        } else if (pointsInside === 4) {
-          // On the opposite, if all the points are inside the
-          // polygon, then the tile is fully within it.
-          cache[i + '-' + j] = 'i';
+        // If all points of the tile are inside the polygon,
+        // or all points are outside then we need to check
+        // that no point of the polygon is inside the tile.
+        if (!pointsInside || pointsInside === 4) {
+          const pointOfPolygonInsideTile = polygon.some(point => {
+            return (point[0] >= (minY + tileY * i) &&
+                point[0] <= (minY + tileY * (i + 1)) &&
+                point[1] >= (minX + tileX * j) &&
+                point[1] <= (minX + tileX * (j + 1)));
+          });
+          if (!pointOfPolygonInsideTile) {
+            // If no point of the polygon is inside the tile
+            // and no point of the tile is inside the
+            // polygon, then the tile is completely outside.
+            if (!pointsInside) {
+              cache[i + '-' + j] = 'o';
+            }
+            // If no point of the polygon is inside the tile
+            // and all points of the tile are outside the
+            // polygon, then the tile is completely outside.
+            if (pointsInside === 4) {
+              cache[i + '-' + j] = 'i';
+            }
+          } else {
+            cache[i + '-' + j] = 'x';
+          }
         } else {
           // If some point are inside, and others outside, then
           // the tile is marked as uncertain. We'll need to
