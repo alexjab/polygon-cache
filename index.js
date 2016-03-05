@@ -8,35 +8,30 @@ module.exports = class IndexedPolygon {
    * @constructor
    * @param {Object} feature - A GeoJSON Feature the geometry of which is a Polygon
    */
-  constructor (feature) {
+  constructor (feature, options) {
     if (feature.geometry.type !== 'Polygon') {
       throw new Error(`Expected Feature to be of type "Polygon", "${feature.geometry.type}" found instead`);
     }
-
-    const bounds = this.getPolygonBounds(feature);
-    const minX = bounds.minX;
-    const maxX = bounds.maxX;
-    const minY = bounds.minY;
-    const maxY = bounds.maxY;
-
-    const baseUnit = 20;
-    const tileX = (maxX - minX)/baseUnit;
-    const tileY = (maxY - minY)/baseUnit;
-    let cache = this.buildInclusionCache(feature.geometry.coordinates[0], { bounds, baseUnit, tileX, tileY });
-
-    if (feature.geometry.coordinates.length > 1) {
-      cache = this.buildExclusionCache(feature.geometry.coordinates.slice(1), cache, { bounds, baseUnit, tileX, tileY });
-    }
+    options = options || {};
 
     this.originalFeature = feature;
-    this.minX = minX;
-    this.maxX = maxX;
-    this.minY = minY;
-    this.maxY = maxY;
-    this.baseUnit = baseUnit;
-    this.tileX = tileX;
-    this.tileY = tileY;
-    this.cache = cache;
+
+    const bounds = this.computePolygonBounds(feature);
+    this.minX = bounds.minX;
+    this.maxX = bounds.maxX;
+    this.minY = bounds.minY;
+    this.maxY = bounds.maxY;
+
+    this.baseUnit = options.granularity || 20;
+    this.tileX = (this.maxX - this.minX) / this.baseUnit;
+    this.tileY = (this.maxY - this.minY) / this.baseUnit;
+
+    this.cache = {};
+    this.buildInclusionCache(feature.geometry.coordinates[0]);
+
+    if (feature.geometry.coordinates.length > 1) {
+      this.buildExclusionCache(feature.geometry.coordinates.slice(1));
+    }
   }
 
   /*
@@ -62,41 +57,68 @@ module.exports = class IndexedPolygon {
     }
   }
 
-  getPolygonBounds(feature) {
-    let bounds = {
-      minX: +Infinity,
-      maxX: -Infinity,
-      minY: +Infinity,
-      maxY: -Infinity
-    };
+  computePolygonBounds(feature) {
+    let minX = +Infinity;
+    let maxX = -Infinity;
+    let minY = +Infinity;
+    let maxY = -Infinity;
 
     feature.geometry.coordinates.forEach(coords => {
       coords.forEach(coord => {
-        if (coord[0] < bounds.minY) bounds.minY = coord[0];
-        if (coord[0] > bounds.maxY) bounds.maxY = coord[0];
-        if (coord[1] < bounds.minX) bounds.minX = coord[1];
-        if (coord[1] > bounds.maxX) bounds.maxX = coord[1];
+        if (coord[0] < minY) minY = coord[0];
+        if (coord[0] > maxY) maxY = coord[0];
+        if (coord[1] < minX) minX = coord[1];
+        if (coord[1] > maxX) maxX = coord[1];
       });
     });
 
-    return bounds;
+    return {
+      minX,
+      maxX,
+      minY,
+      maxY
+    };
   }
 
-  buildInclusionCache(polygon, params) {
-    const minX = params.bounds.minX;
-    const maxX = params.bounds.maxX;
-    const minY = params.bounds.minY;
-    const maxY = params.bounds.maxY;
-    const baseUnit = params.baseUnit;
-    const tileX = params.tileX;
-    const tileY = params.tileY;
+  getTileUnderPoint(point) {
+    return {
+      y: Math.floor((point[0] - this.minY) / this.tileY),
+      x: Math.floor((point[1] - this.minX) / this.tileX)
+    };
+  }
 
-    const cache = {};
-    const pointCache = {};
+  buildInclusionCache(polygon) {
     // Let's index the first array (the "filled" area) 
-    for (let i = 0; i <= baseUnit; i++) {
-      for (let j = 0; j <= baseUnit; j++) {
+    const minX = this.minX;
+    const maxX = this.maxX;
+    const minY = this.minY;
+    const maxY = this.maxY;
+    const baseUnit = this.baseUnit;
+    const tileX = this.tileX;
+    const tileY = this.tileY;
+    const cache = this.cache;
+
+    // First, let get all the tiles which contain a point of the polygon.
+    // Those tiles should be marked "x" (uncertain).
+    polygon.forEach(point => {
+      const tile = this.getTileUnderPoint(point);
+      if (!cache[tile.y + '-' + tile.x]) {
+        cache[tile.y + '-' + tile.x] = 'x';
+      }
+    });
+
+    const pointCache = {};
+    for (let i = 0; i < baseUnit; i++) {
+      for (let j = 0; j < baseUnit; j++) {
+        if (cache[i + '-' + j] === 'x') {
+          continue;
+        }
+
         let pointsInside = 0;
+        // Then for every tile, we check whether none of its point
+        // or all of them are inside the polygon. We cache this information
+        // to get around all tiles faster.
+
         [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]].forEach(comb => {
           if (pointCache[comb[0] + '-' + comb[1]]) {
             pointsInside++;
@@ -111,31 +133,22 @@ module.exports = class IndexedPolygon {
             }
           }
         });
+
         // If all points of the tile are inside the polygon,
         // or all points are outside then we need to check
         // that no point of the polygon is inside the tile.
         if (!pointsInside || pointsInside === 4) {
-          const pointOfPolygonInsideTile = polygon.some(point => {
-            return (point[0] >= (minY + tileY * i) &&
-                point[0] <= (minY + tileY * (i + 1)) &&
-                point[1] >= (minX + tileX * j) &&
-                point[1] <= (minX + tileX * (j + 1)));
-          });
-          if (!pointOfPolygonInsideTile) {
-            // If no point of the polygon is inside the tile
-            // and no point of the tile is inside the
-            // polygon, then the tile is completely outside.
-            if (!pointsInside) {
-              cache[i + '-' + j] = 'o';
-            }
-            // If no point of the polygon is inside the tile
-            // and all points of the tile are outside the
-            // polygon, then the tile is completely outside.
-            if (pointsInside === 4) {
-              cache[i + '-' + j] = 'i';
-            }
-          } else {
-            cache[i + '-' + j] = 'x';
+          // If no point of the polygon is inside the tile
+          // and no point of the tile is inside the
+          // polygon, then the tile is completely outside.
+          if (!pointsInside) {
+            cache[i + '-' + j] = 'o';
+          }
+          // If no point of the polygon is inside the tile
+          // and all points of the tile are outside the
+          // polygon, then the tile is completely outside.
+          if (pointsInside === 4) {
+            cache[i + '-' + j] = 'i';
           }
         } else {
           // If some point are inside, and others outside, then
@@ -149,19 +162,20 @@ module.exports = class IndexedPolygon {
     return cache;
   }
 
-  buildExclusionCache(polygons, cache, params) {
-    const minX = params.bounds.minX;
-    const maxX = params.bounds.maxX;
-    const minY = params.bounds.minY;
-    const maxY = params.bounds.maxY;
-    const baseUnit = params.baseUnit;
-    const tileX = params.tileX;
-    const tileY = params.tileY;
+  buildExclusionCache(polygons) {
+    const minX = this.minX;
+    const maxX = this.maxX;
+    const minY = this.minY;
+    const maxY = this.maxY;
+    const baseUnit = this.baseUnit;
+    const tileX = this.tileX;
+    const tileY = this.tileY;
+    const cache = this.cache;
 
     // Then let's index the other arrays (the "empty" areas)
     polygons.forEach(polygon => {
-      for (let i = 0; i <= baseUnit; i++) {
-        for (let j = 0; j <= baseUnit; j++) {
+      for (let i = 0; i < baseUnit; i++) {
+        for (let j = 0; j < baseUnit; j++) {
           // If the tile is already uncertain, there is nothing we can do
           if (cache[i + '-' + j] === 'x') {
             continue;
@@ -170,7 +184,7 @@ module.exports = class IndexedPolygon {
           // We first need to check whether the empty area
           // is smaller and inside a tile. If so, the tile
           // should be uncertain.
-          const emptyAreaWithinTile = polygon.every(coord => {
+          const emptyAreaWithinTile = polygon.some(coord => {
             if (coord[0] < (minY + tileY * i) ||
                 coord[0] > (minY + tileY * (i + 1)) ||
                 coord[1] < (minX + tileX * j) ||
@@ -192,6 +206,7 @@ module.exports = class IndexedPolygon {
               pointsOutside++;
             }
           });
+
           if (pointsOutside === 4) {
             // If the whole tile is within the empty area,
             // and if the whole tile was totally inside

@@ -4,11 +4,12 @@
   "description": "Faster point-in-polygon through indexing. Inpired by uber/in-n-out.",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --recursive --bail"
+    "test": "istanbul cover _mocha --  --recursive --trace --bail"
   },
   "author": "alexjab <alexandre.jablon@gmail.com> (http://jablon.me/)",
   "license": "MIT",
   "devDependencies": {
+    "istanbul": "^0.4.2",
     "mocha": "^2.4.5",
     "should": "^8.2.2"
   },
