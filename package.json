@@ -1,7 +1,7 @@
 {
-  "name": "indexed-polygon",
+  "name": "polygon-cache",
   "version": "0.1.0",
-  "description": "Faster point-in-polygon through indexing. Inpired by uber/in-n-out.",
+  "description": "Faster point-in-polygon through caching. Inspired by uber/in-n-out.",
   "main": "index.js",
   "scripts": {
     "test": "istanbul cover _mocha --  --recursive --trace --bail"

@@ -2,9 +2,9 @@
 
 const pointInPolygon = require('point-in-polygon');
 
-module.exports = class IndexedPolygon {
+module.exports = class PolygonCache {
   /*
-   * Create the polygon's index (called cache)
+   * Create the polygon's cache
    * @constructor
    * @param {Object} feature - A GeoJSON Feature the geometry of which is a Polygon
    */

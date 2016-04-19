@@ -3,7 +3,7 @@
 const should = require('should');
 const pointInPolygon = require('point-in-polygon');
 
-const IndexedPolygon = require('../index.js');
+const PolygonCache = require('../index.js');
 
 const paris = require('./fixtures/paris');
 const paris1 = require('./fixtures/paris1');
@@ -15,17 +15,17 @@ if (process.env.FAST_TEST) {
   ITERATIONS = 1000;
 }
 
-describe('IndexedPolygon', function () {
+describe('PolygonCache', function () {
   this.timeout(10000);
-  describe('new IndexedPolygon', function () {
-    it('should create a new IndexedPolygon', () => {
-      const indexed = new IndexedPolygon(paris);
+  describe('new PolygonCache', function () {
+    it('should create a new PolygonCache', () => {
+      const indexed = new PolygonCache(paris);
       should.exist(indexed);
     });
 
-    it('should create new IndexedPolygons in less then 2 seconds', () => {
+    it('should create new PolygonCaches in less then 2 seconds', () => {
       for (let i = 0; i < 100; i++) {
-        new IndexedPolygon(paris);
+        new PolygonCache(paris);
       }
     });
 
@@ -38,7 +38,7 @@ describe('IndexedPolygon', function () {
           "coordinates": []
         }
       };
-      (() => new IndexedPolygon(feature)).should.throw('Expected Feature to be of type "Polygon", "MultiPolygon" found instead');
+      (() => new PolygonCache(feature)).should.throw('Expected Feature to be of type "Polygon", "MultiPolygon" found instead');
     });
   });
 
@@ -49,7 +49,7 @@ describe('IndexedPolygon', function () {
         const points = [];
 
         before(function() {
-          indexed = new IndexedPolygon(paris);
+          indexed = new PolygonCache(paris);
           const minX = indexed.minX;
           const minY = indexed.minY;
           const maxX = indexed.maxX;
@@ -80,7 +80,7 @@ describe('IndexedPolygon', function () {
         const points = [];
 
         before(function() {
-          indexed = new IndexedPolygon(paris);
+          indexed = new PolygonCache(paris);
           const minX = indexed.minX;
           const minY = indexed.minY;
           const maxX = indexed.maxX;
@@ -117,7 +117,7 @@ describe('IndexedPolygon', function () {
         const points = [];
 
         before(function() {
-          indexed = new IndexedPolygon(paris);
+          indexed = new PolygonCache(paris);
           const minX = indexed.minX;
           const minY = indexed.minY;
           const maxX = indexed.maxX;
@@ -154,7 +154,7 @@ describe('IndexedPolygon', function () {
         const points = [];
 
         before(function() {
-          indexed = new IndexedPolygon(paris);
+          indexed = new PolygonCache(paris);
           const minX = indexed.minX;
           const minY = indexed.minY;
           const maxX = indexed.maxX;
@@ -193,7 +193,7 @@ describe('IndexedPolygon', function () {
         const points = [];
 
         before(function() {
-          indexed = new IndexedPolygon(paris1, { granularity: 3 });
+          indexed = new PolygonCache(paris1, { granularity: 3 });
           const minX = indexed.minX;
           const minY = indexed.minY;
           const maxX = indexed.maxX;
@@ -228,7 +228,7 @@ describe('IndexedPolygon', function () {
         const points = [];
 
         before(function() {
-          indexed = new IndexedPolygon(paris2);
+          indexed = new PolygonCache(paris2);
           const minX = indexed.minX;
           const minY = indexed.minY;
           const maxX = indexed.maxX;
@@ -263,7 +263,7 @@ describe('IndexedPolygon', function () {
         const points = [];
 
         before(function() {
-          indexed = new IndexedPolygon(paris3);
+          indexed = new PolygonCache(paris3);
           const minX = indexed.minX;
           const minY = indexed.minY;
           const maxX = indexed.maxX;
@@ -296,7 +296,7 @@ describe('IndexedPolygon', function () {
   describe('#getCacheStats() - Returns the numbers of "i"s, "o"s and "x"s in the cache', function () {
     describe('Plain shape', function () {
       it('should return stats about the cache', () => {
-        const indexed = new IndexedPolygon(paris);
+        const indexed = new PolygonCache(paris);
         const cacheStats = indexed.getCacheStats();
         should.exist(cacheStats);
         cacheStats.i.should.be.greaterThan(0).and.greaterThan(cacheStats.x);
