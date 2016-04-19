@@ -1,6 +1,6 @@
 {
   "name": "polygon-cache",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Faster point-in-polygon through caching. Inspired by uber/in-n-out.",
   "main": "index.js",
   "scripts": {
