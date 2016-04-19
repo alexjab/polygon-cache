@@ -1,6 +1,8 @@
 # polygon-cache
 Faster point-in-polygon through caching. Inspired by uber/in-n-out.
 
+[![Circle CI](https://circleci.com/gh/alexjab/polygon-cache.svg?style=svg)](https://circleci.com/gh/alexjab/polygon-cache)
+
 ##TL;DR
 ```
 npm install alexjab/polygon-cache
