@@ -4,7 +4,7 @@ const pointInPolygon = require('point-in-polygon');
 
 module.exports = class PolygonCache {
   /*
-   * Create the polygon's cache
+   * Creates the polygon's cache.
    * @constructor
    * @param {Object} feature - A GeoJSON Feature the geometry of which is a Polygon
    */
@@ -35,7 +35,7 @@ module.exports = class PolygonCache {
   }
 
   /*
-   * Returns true or false depending on whether a point intersects with an indexed polygon
+   * Returns true or false depending on whether a point intersects with a polygon cache.
    * @param {Array[Number]} point - A pair of latitude and longitude that describe a point
    * @returns {Boolean}
    */
@@ -57,6 +57,11 @@ module.exports = class PolygonCache {
     }
   }
 
+  /*
+   * Returns the bounding box of the Polygon ({ minX, maxX, minY, maxY }).
+   * @param {Object} feature - The polygon whose bounding box we want to compute.
+   * @returns {Object}
+   */
   computePolygonBounds(feature) {
     let minX = +Infinity;
     let maxX = -Infinity;
@@ -80,6 +85,11 @@ module.exports = class PolygonCache {
     };
   }
 
+  /*
+   * Gets the coordinates in the grid system of the tile below the specified point ({ x, y }).
+   * @param {Array[Number]} point - A point coordinates.
+   * @returns {Object}
+   */
   getTileUnderPoint(point) {
     return {
       y: Math.floor((point[0] - this.minY) / this.tileY),
@@ -87,6 +97,11 @@ module.exports = class PolygonCache {
     };
   }
 
+  /*
+   * Returns a cache of the Polygon (split into smaller tiles).
+   * @param {Array[Array[Number]]} point - Points of a Polygon (Array with only one Array of coordinates).
+   * @returns {Object}
+   */
   buildInclusionCache(polygon) {
     // Let's index the first array (the "filled" area) 
     const minX = this.minX;
@@ -107,6 +122,8 @@ module.exports = class PolygonCache {
       }
     });
 
+    // At this point, all of the tiles that contains a point of the polygon
+    // are marked uncertain so we can skip them.
     const pointCache = {};
     for (let i = 0; i < baseUnit; i++) {
       for (let j = 0; j < baseUnit; j++) {
@@ -134,22 +151,16 @@ module.exports = class PolygonCache {
           }
         });
 
-        // If all points of the tile are inside the polygon,
-        // or all points are outside then we need to check
-        // that no point of the polygon is inside the tile.
-        if (!pointsInside || pointsInside === 4) {
-          // If no point of the polygon is inside the tile
-          // and no point of the tile is inside the
-          // polygon, then the tile is completely outside.
-          if (!pointsInside) {
-            cache[i + '-' + j] = 'o';
-          }
+        if (!pointsInside) {
+          // If no point of the polygon is inside the tile (checked beforehand)
+          // and no point of the tile is inside the polygon,
+          // then the tile is completely outside.
+          cache[i + '-' + j] = 'o';
+        } else if (pointsInside === 4) {
           // If no point of the polygon is inside the tile
           // and all points of the tile are outside the
           // polygon, then the tile is completely outside.
-          if (pointsInside === 4) {
-            cache[i + '-' + j] = 'i';
-          }
+          cache[i + '-' + j] = 'i';
         } else {
           // If some point are inside, and others outside, then
           // the tile is marked as uncertain. We'll need to
@@ -162,6 +173,11 @@ module.exports = class PolygonCache {
     return cache;
   }
 
+  /*
+   * Updates the cache to take into accounts the hollow parts of the Polygon.
+   * @param {Array[Array[Number]]} point - Array of points of a Polygon (Array with up to several Arrays of one Array of coordinates).
+   * @returns {Object}
+   */
   buildExclusionCache(polygons) {
     const minX = this.minX;
     const maxX = this.maxX;
@@ -228,6 +244,12 @@ module.exports = class PolygonCache {
     return cache;
   }
 
+  /*
+   * Returns stats about the cache (the number of "inside", "outside", "uncertain" tiles, as well as the ratio of "uncertain" areas over
+   * the "certain" areas). This is meant to help you figure out the best baseUnit.
+   * @param {Array[Array[Number]]} point - Array of points of a Polygon (Array with up to several Arrays of one Array of coordinates).
+   * @returns {Object}
+   */
   getCacheStats() {
     const stats = {
       i: 0,

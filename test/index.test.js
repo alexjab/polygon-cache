@@ -67,9 +67,6 @@ describe('PolygonCache', function () {
 
         it('should return the same as point-in-polygon', () => {
           points.forEach(point => {
-            if (indexed.intersects(point.point) !== point.expected) {
-              console.log(point);
-            }
             indexed.intersects(point.point).should.equal(point.expected);
           });
         });
@@ -104,9 +101,6 @@ describe('PolygonCache', function () {
 
         it('should return the same as point-in-polygon', () => {
           points.forEach(point => {
-            if (indexed.intersects(point.point) !== point.expected) {
-              console.log(point);
-            }
             indexed.intersects(point.point).should.equal(point.expected);
           });
         });
@@ -141,9 +135,6 @@ describe('PolygonCache', function () {
 
         it('should return the same as point-in-polygon', () => {
           points.forEach(point => {
-            if (indexed.intersects(point.point) !== point.expected) {
-              console.log(point);
-            }
             indexed.intersects(point.point).should.equal(point.expected);
           });
         });
@@ -178,9 +169,6 @@ describe('PolygonCache', function () {
 
         it('should return the same as point-in-polygon', () => {
           points.forEach(point => {
-            if (indexed.intersects(point.point) !== point.expected) {
-              console.log(point);
-            }
             indexed.intersects(point.point).should.equal(point.expected);
           });
         });
@@ -213,9 +201,6 @@ describe('PolygonCache', function () {
 
         it('should return the same as point-in-polygon', () => {
           points.forEach(point => {
-            if (indexed.intersects(point.point) !== point.expected) {
-              console.log(point);
-            }
             indexed.intersects(point.point).should.equal(point.expected);
           });
         });
@@ -248,9 +233,6 @@ describe('PolygonCache', function () {
 
         it('should return the same as point-in-polygon', () => {
           points.forEach(point => {
-            if (indexed.intersects(point.point) !== point.expected) {
-              console.log(point);
-            }
             indexed.intersects(point.point).should.equal(point.expected);
           });
         });
@@ -283,9 +265,6 @@ describe('PolygonCache', function () {
 
         it('should return the same as point-in-polygon', () => {
           points.forEach(point => {
-            if (indexed.intersects(point.point) !== point.expected) {
-              console.log(point);
-            }
             indexed.intersects(point.point).should.equal(point.expected);
           });
         });
@@ -307,6 +286,3 @@ describe('PolygonCache', function () {
     });
   });
 });
-
-// TESTS SHOULD RETURN THE SAME VALUE, WITH DIFFERENT GRANULARITIES
-// TRY TO REPLACE LETTERS O, I, X BY NUMBER 0, 1, 2
